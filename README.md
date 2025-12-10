@@ -287,4 +287,14 @@ curl http://localhost:8000/test/paypal
 ---
 
 
-Tell me which of these you'd like me to add next.
+<img width="1903" height="969" alt="image" src="https://github.com/user-attachments/assets/0eee381d-a3f9-4a58-b5e9-97256f8b7701" />
+
+<img width="1919" height="793" alt="image" src="https://github.com/user-attachments/assets/5a994922-45fa-4961-9879-e857973ab374" />
+
+<img width="889" height="848" alt="image" src="https://github.com/user-attachments/assets/a6b533ad-c51e-4293-ac30-3f95f7922e8f" />
+
+<img width="1247" height="974" alt="image" src="https://github.com/user-attachments/assets/9692ae81-4f51-43e1-b078-e0c94b423695" />
+
+
+
+
