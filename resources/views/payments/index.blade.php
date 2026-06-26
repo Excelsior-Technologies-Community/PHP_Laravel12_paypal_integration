@@ -20,6 +20,58 @@
                     </a>
                 </div>
             @else
+
+                <div class="grid grid-cols-4 gap-4 mb-6">
+                    <div class="bg-blue-500 text-white rounded-lg p-4">
+                        <h2 class="text-sm">Total Payments</h2>
+                        <p class="text-3xl font-bold">{{ $totalPayments }}</p>
+                    </div>
+
+                    <div class="bg-green-500 text-white rounded-lg p-4">
+                        <h2 class="text-sm">Completed</h2>
+                        <p class="text-3xl font-bold">{{ $completedPayments }}</p>
+                    </div>
+
+                    <div class="bg-yellow-500 text-white rounded-lg p-4">
+                        <h2 class="text-sm">Pending</h2>
+                        <p class="text-3xl font-bold">{{ $pendingPayments }}</p>
+                    </div>
+
+                    <div class="bg-purple-500 text-white rounded-lg p-4">
+                        <h2 class="text-sm">Revenue</h2>
+                        <p class="text-3xl font-bold">${{ number_format($totalRevenue, 2) }}</p>
+                    </div>
+                </div>
+
+                <form method="GET" action="{{ route('payments.index') }}" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+
+                    <input type="text" name="search" value="{{ request('search') }}"
+                        placeholder="Search Payment ID / Email / Invoice"
+                        class="border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
+
+                    <select name="status" class="border rounded-lg px-4 py-2">
+                        <option value="">All Status</option>
+                        <option value="CREATED" {{ request('status') == 'CREATED' ? 'selected' : '' }}>Created</option>
+                        <option value="COMPLETED" {{ request('status') == 'COMPLETED' ? 'selected' : '' }}>Completed</option>
+                        <option value="APPROVED" {{ request('status') == 'APPROVED' ? 'selected' : '' }}>Approved</option>
+                        <option value="DENIED" {{ request('status') == 'DENIED' ? 'selected' : '' }}>Denied</option>
+                        <option value="REFUNDED" {{ request('status') == 'REFUNDED' ? 'selected' : '' }}>Refunded</option>
+                    </select>
+
+                    <select name="sort" class="border rounded-lg px-4 py-2">
+                        <option value="">Newest First</option>
+                        <option value="oldest" {{ request('sort') == 'oldest' ? 'selected' : '' }}>Oldest First</option>
+                        <option value="amount_high" {{ request('sort') == 'amount_high' ? 'selected' : '' }}>Amount High → Low
+                        </option>
+                        <option value="amount_low" {{ request('sort') == 'amount_low' ? 'selected' : '' }}>Amount Low → High
+                        </option>
+                    </select>
+
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2 font-semibold">
+                        <i class="fas fa-search mr-2"></i>Search
+                    </button>
+
+                </form>
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
@@ -144,7 +196,7 @@
                 </div>
 
                 <div class="mt-6">
-                    {{ $payments->links() }}
+                    {{ $payments->withQueryString()->links() }}
                 </div>
             @endif
         </div>

@@ -80,17 +80,17 @@ class PayPalController extends Controller
     {
         try {
             $token = $request->query('token');
-            
+
             if (!$token) {
                 return redirect()->route('payments.create')->with('error', 'Payment token not found.');
             }
 
             // Capture the payment
             $capture = $this->paypalService->captureOrder($token);
-            
+
             // Update payment record
             $payment = Payment::where('payment_id', $token)->firstOrFail();
-            
+
             // Extract payer email from capture response
             $payerEmail = null;
             if (isset($capture['payer']['email_address'])) {
@@ -127,10 +127,50 @@ class PayPalController extends Controller
     /**
      * List all payments
      */
-    public function index()
+    public function index(Request $request)
     {
-        $payments = Payment::orderBy('created_at', 'desc')->paginate(10);
-        return view('payments.index', compact('payments'));
+        $query = Payment::query();
+
+        // Search
+        if ($request->filled('search')) {
+            $query->where(function ($q) use ($request) {
+                $q->where('payment_id', 'like', '%' . $request->search . '%')
+                    ->orWhere('payer_email', 'like', '%' . $request->search . '%')
+                    ->orWhere('invoice_id', 'like', '%' . $request->search . '%');
+            });
+        }
+
+        // Filter
+        if ($request->filled('status')) {
+            $query->where('payment_status', $request->status);
+        }
+
+        // Sort
+        if ($request->sort == 'oldest') {
+            $query->orderBy('id', 'asc');
+        } elseif ($request->sort == 'amount_high') {
+            $query->orderBy('amount', 'desc');
+        } elseif ($request->sort == 'amount_low') {
+            $query->orderBy('amount', 'asc');
+        } else {
+            $query->orderBy('id', 'asc'); // Default order
+        }
+
+        $payments = $query->paginate(4)->withQueryString();
+
+        // Dashboard Statistics
+        $totalPayments = Payment::count();
+        $completedPayments = Payment::where('payment_status', 'COMPLETED')->count();
+        $pendingPayments = Payment::where('payment_status', 'CREATED')->count();
+        $totalRevenue = Payment::where('payment_status', 'COMPLETED')->sum('amount');
+
+        return view('payments.index', compact(
+            'payments',
+            'totalPayments',
+            'completedPayments',
+            'pendingPayments',
+            'totalRevenue'
+        ));
     }
 
     /**
