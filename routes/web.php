@@ -8,6 +8,9 @@ Route::get('/', function () {
     return redirect()->route('payments.create');
 });
 
+Route::get('/payments/export', [PayPalController::class,'export'])
+    ->name('payments.export');
+
 // Payment Routes
 Route::controller(PayPalController::class)->group(function () {
     Route::get('/payments/create', 'create')->name('payments.create');
