@@ -14,12 +14,14 @@ class Payment extends Model
         'currency',
         'payment_status',
         'payment_details',
+        'activity_log',
         'invoice_id',
         'description',
     ];
 
     protected $casts = [
         'payment_details' => 'array',
+        'activity_log' => 'array',
         'amount' => 'decimal:2',
     ];
 

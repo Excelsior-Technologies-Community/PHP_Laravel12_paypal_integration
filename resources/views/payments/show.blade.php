@@ -39,26 +39,26 @@
                         <div>
                             <p class="text-gray-600 text-sm">Status</p>
                             @php
-                                $statusColors = [
-                                    'COMPLETED' => 'bg-green-100 text-green-800',
-                                    'CREATED' => 'bg-blue-100 text-blue-800',
-                                    'APPROVED' => 'bg-yellow-100 text-yellow-800',
-                                    'DENIED' => 'bg-red-100 text-red-800',
-                                    'REFUNDED' => 'bg-purple-100 text-purple-800',
-                                ];
-                                $color = $statusColors[$payment->payment_status] ?? 'bg-gray-100 text-gray-800';
+                            $statusColors = [
+                            'COMPLETED' => 'bg-green-100 text-green-800',
+                            'CREATED' => 'bg-blue-100 text-blue-800',
+                            'APPROVED' => 'bg-yellow-100 text-yellow-800',
+                            'DENIED' => 'bg-red-100 text-red-800',
+                            'REFUNDED' => 'bg-purple-100 text-purple-800',
+                            ];
+                            $color = $statusColors[$payment->payment_status] ?? 'bg-gray-100 text-gray-800';
                             @endphp
                             <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {{ $color }}">
                                 @if($payment->payment_status == 'COMPLETED')
-                                    <i class="fas fa-check-circle mr-2"></i>
+                                <i class="fas fa-check-circle mr-2"></i>
                                 @elseif($payment->payment_status == 'CREATED')
-                                    <i class="fas fa-clock mr-2"></i>
+                                <i class="fas fa-clock mr-2"></i>
                                 @elseif($payment->payment_status == 'APPROVED')
-                                    <i class="fas fa-thumbs-up mr-2"></i>
+                                <i class="fas fa-thumbs-up mr-2"></i>
                                 @elseif($payment->payment_status == 'DENIED')
-                                    <i class="fas fa-times-circle mr-2"></i>
+                                <i class="fas fa-times-circle mr-2"></i>
                                 @elseif($payment->payment_status == 'REFUNDED')
-                                    <i class="fas fa-undo mr-2"></i>
+                                <i class="fas fa-undo mr-2"></i>
                                 @endif
                                 {{ $payment->payment_status }}
                             </span>
@@ -82,24 +82,24 @@
                             <p class="font-medium text-gray-800">{{ $payment->payer_email }}</p>
                         </div>
                         @endif
-                        
+
                         @if($payment->payer_id)
                         <div>
                             <p class="text-gray-600 text-sm">Payer ID</p>
                             <p class="font-medium text-gray-800">{{ $payment->payer_id }}</p>
                         </div>
                         @endif
-                        
+
                         <div>
                             <p class="text-gray-600 text-sm">Created</p>
                             <p class="font-medium text-gray-800">{{ $payment->created_at->format('M d, Y h:i A') }}</p>
                         </div>
-                        
+
                         <div>
                             <p class="text-gray-600 text-sm">Last Updated</p>
                             <p class="font-medium text-gray-800">{{ $payment->updated_at->format('M d, Y h:i A') }}</p>
                         </div>
-                        
+
                         @if($payment->invoice_id)
                         <div>
                             <p class="text-gray-600 text-sm">Invoice ID</p>
@@ -115,10 +115,9 @@
             <div class="mb-6">
                 <h3 class="text-lg font-semibold text-gray-800 mb-3">Raw Payment Details</h3>
                 <div class="relative">
-                    <button 
-                        onclick="copyToClipboard()" 
-                        class="absolute right-4 top-4 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2 px-4 rounded-lg transition z-10"
-                    >
+                    <button
+                        onclick="copyToClipboard()"
+                        class="absolute right-4 top-4 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2 px-4 rounded-lg transition z-10">
                         <i class="fas fa-copy mr-1"></i> Copy JSON
                     </button>
                     <div id="json-content" class="bg-gray-900 text-gray-100 rounded-lg p-4 font-mono text-sm overflow-x-auto">
@@ -128,29 +127,96 @@
             </div>
             @endif
 
+            <!-- Payment Timeline -->
+
+            @if(isset($payment->payment_details['timeline']))
+
+            <div class="mb-8">
+
+                <h2 class="text-xl font-bold mb-4">
+                    Payment Timeline
+                </h2>
+
+
+                @foreach($payment->payment_details['timeline'] as $item)
+
+                <div class="border-l-4 border-blue-500 pl-4 py-3 mb-3 bg-gray-50 rounded">
+
+
+                    <h3 class="font-bold">
+
+                        {{ $item['status'] }}
+
+                    </h3>
+
+
+                    <p class="text-gray-600">
+
+                        {{ $item['time'] }}
+
+                    </p>
+
+
+                </div>
+
+
+                @endforeach
+
+
+            </div>
+
+            @endif
+
+
+            <!-- Payment Activity -->
+            @if($payment->activity_log)
+
+            <div class="mb-8">
+
+                <h2 class="text-xl font-bold mb-4">
+                    Payment Activity
+                </h2>
+
+                @foreach($payment->activity_log as $log)
+
+                <div class="border-l-4 border-green-500 pl-4 py-3 mb-3 bg-green-50 rounded">
+
+                    <h3 class="font-semibold">
+                        {{ str_replace('_', ' ', $log['action']) }}
+                    </h3>
+
+                    <p class="text-gray-600 text-sm">
+                        {{ $log['time'] }}
+                    </p>
+
+                </div>
+
+                @endforeach
+
+            </div>
+
+            @endif
+
             <!-- Actions -->
             <div class="flex flex-col sm:flex-row gap-4 pt-6 border-t border-gray-200">
-                <a 
-                    href="{{ route('payments.create') }}" 
-                    class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-center font-semibold py-3 px-4 rounded-lg transition"
-                >
+                <a
+                    href="{{ route('payments.create') }}"
+                    class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-center font-semibold py-3 px-4 rounded-lg transition">
                     <i class="fas fa-plus-circle mr-2"></i> New Payment
                 </a>
-                
+
                 @if($payment->payment_status == 'COMPLETED')
-                <button 
-                    onclick="window.print()" 
-                    class="flex-1 bg-green-600 hover:bg-green-700 text-white text-center font-semibold py-3 px-4 rounded-lg transition"
-                >
+                <button
+                    onclick="window.print()"
+                    class="flex-1 bg-green-600 hover:bg-green-700 text-white text-center font-semibold py-3 px-4 rounded-lg transition">
                     <i class="fas fa-print mr-2"></i> Print Receipt
                 </button>
                 @endif
-                
+
                 @if($payment->payment_status == 'COMPLETED')
-                <a 
-                    href="#" 
-                    class="flex-1 bg-purple-600 hover:bg-purple-700 text-white text-center font-semibold py-3 px-4 rounded-lg transition"
-                >
+                <a
+                    href="#"
+                    class="flex-1 bg-purple-600 hover:bg-purple-700 text-white text-center font-semibold py-3 px-4 rounded-lg transition">
                     <i class="fas fa-redo mr-2"></i> Refund
                 </a>
                 @endif
@@ -160,11 +226,11 @@
 </div>
 
 <script>
-function copyToClipboard() {
-    const jsonContent = document.getElementById('json-content').textContent;
-    navigator.clipboard.writeText(jsonContent).then(() => {
-        alert('JSON copied to clipboard!');
-    });
-}
+    function copyToClipboard() {
+        const jsonContent = document.getElementById('json-content').textContent;
+        navigator.clipboard.writeText(jsonContent).then(() => {
+            alert('JSON copied to clipboard!');
+        });
+    }
 </script>
 @endsection
