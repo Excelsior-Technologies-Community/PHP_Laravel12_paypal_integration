@@ -6,6 +6,7 @@ use App\Models\Payment;
 use App\Services\PayPalService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PayPalController extends Controller
 {
@@ -49,6 +50,13 @@ class PayPalController extends Controller
                 'payment_status' => 'CREATED',
                 'description' => $request->description,
                 'payment_details' => $order,
+
+                'activity_log' => [
+                    [
+                        'action' => 'PAYMENT_CREATED',
+                        'time' => now()->toDateTimeString(),
+                    ],
+                ],
                 // payer_email is nullable, so we don't need to set it here
                 // It will be updated after payment completion
             ]);
@@ -62,6 +70,16 @@ class PayPalController extends Controller
                 }
             }
 
+            $activity = $payment->activity_log ?? [];
+
+            $activity[] = [
+                'action' => 'REDIRECTED_TO_PAYPAL',
+                'time' => now()->toDateTimeString(),
+            ];
+
+            $payment->update([
+                'activity_log' => $activity,
+            ]);
             if ($approveUrl) {
                 return redirect()->away($approveUrl);
             }
@@ -99,13 +117,28 @@ class PayPalController extends Controller
                 $payerEmail = $capture['payment_source']['paypal']['email_address'];
             }
 
+            $details = $payment->payment_details ?? [];
+
+            $activity = $payment->activity_log ?? [];
+
+            $activity[] = [
+                'action' => 'PAYMENT_COMPLETED',
+                'time' => now()->toDateTimeString(),
+            ];
+
+            $details['timeline'][] = [
+                'status' => 'COMPLETED',
+                'time' => now()->toDateTimeString()
+            ];
+
+
             $payment->update([
                 'payment_status' => strtoupper($capture['status'] ?? 'COMPLETED'),
                 'payer_id' => $capture['payer']['payer_id'] ?? null,
                 'payer_email' => $payerEmail,
-                'payment_details' => $capture,
+                'payment_details' => $details,
+                'activity_log' => $activity,
             ]);
-
             return view('payments.success', [
                 'payment' => $payment,
                 'details' => $capture,
@@ -119,8 +152,40 @@ class PayPalController extends Controller
     /**
      * Handle cancelled payment
      */
-    public function cancel()
+    public function cancel(Request $request)
     {
+        $token = $request->query('token');
+
+        if ($token) {
+
+            $payment = Payment::where('payment_id', $token)->first();
+
+            if ($payment) {
+
+                $details = $payment->payment_details ?? [];
+
+                $activity = $payment->activity_log ?? [];
+
+                $activity[] = [
+                    'action' => 'PAYMENT_CANCELLED',
+                    'time' => now()->toDateTimeString(),
+                ];
+
+                $details['timeline'][] = [
+                    'status' => 'CANCELLED',
+                    'time' => now()->toDateTimeString()
+                ];
+
+
+                $payment->update([
+                    'payment_status' => 'CANCELLED',
+                    'payment_details' => $details,
+                    'activity_log' => $activity,
+                ]);
+            }
+        }
+
+
         return view('payments.cancel');
     }
 
@@ -156,7 +221,7 @@ class PayPalController extends Controller
             $query->orderBy('id', 'asc'); // Default order
         }
 
-        $payments = $query->paginate(4)->withQueryString();
+        $payments = $query->paginate(3)->withQueryString();
 
         // Dashboard Statistics
         $totalPayments = Payment::count();
@@ -180,5 +245,60 @@ class PayPalController extends Controller
     {
         $payment = Payment::findOrFail($id);
         return view('payments.show', compact('payment'));
+    }
+
+    public function export()
+    {
+        $payments = Payment::all();
+
+
+        $response = new StreamedResponse(function () use ($payments) {
+
+            $handle = fopen('php://output', 'w');
+
+
+            fputcsv($handle, [
+                'Payment ID',
+                'Email',
+                'Amount',
+                'Currency',
+                'Status',
+                'Description',
+                'Date'
+            ]);
+
+
+            foreach ($payments as $payment) {
+                fputcsv($handle, [
+
+                    $payment->payment_id,
+                    $payment->payer_email,
+                    $payment->amount,
+                    $payment->currency,
+                    $payment->payment_status,
+                    $payment->description,
+                    $payment->created_at
+
+                ]);
+            }
+
+
+            fclose($handle);
+        });
+
+
+        $response->headers->set(
+            'Content-Type',
+            'text/csv'
+        );
+
+
+        $response->headers->set(
+            'Content-Disposition',
+            'attachment; filename=payments.csv'
+        );
+
+
+        return $response;
     }
 }
